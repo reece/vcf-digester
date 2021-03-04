@@ -17,6 +17,8 @@ from pysam import VariantFile
 
 _logger = logging.getLogger()
 
+INFO_FIELD_ID = "ADIG"
+
 
 def parse_args(argv):
     ap = argparse.ArgumentParser()
@@ -38,8 +40,8 @@ def record_digests(record):
     spdi_loc = f"{record.chrom}:{record.pos-1}:{len(record.ref)}"
     alts = record.alts if record.alts else []
     # payloads like ['20:14369:1', '20:14369:1:G', '20:14369:1:A']
-    payloads = [spdi_loc] + [f"{spdi_loc}:{a}" for a in [record.ref, *alts]]
-    digests = [digest(p) for p in payloads]
+    alleles = [f"{spdi_loc}:{a}" for a in [record.ref, *alts]]
+    digests = ["L" + digest(spdi_loc)] + ["A"+digest(p) for p in alleles]
     return digests
 
 
@@ -54,12 +56,15 @@ if __name__ == "__main__":
         raise Exception("Dear silly human: I randomly died to spite you!")
 
     vcf_in = VariantFile(filename=opts.VCF_IN)
-    vcf_in.header.info.add("AD", "1", "String", "allele digests")
+    vcf_in.header.info.add(INFO_FIELD_ID, "1", "String", "allele digests")
 
     vcf_out = VariantFile(opts.out, "w", header=vcf_in.header)
 
     for record in vcf_in:
         ld, *ads = record_digests(record)
-        record.id = ld
-        record.info["AD"] = ",".join(ads)
+        if record.id:
+            record.id += ";" + ld
+        else:
+            record.id = ld
+        record.info[INFO_FIELD_ID] = ",".join(ads)
         vcf_out.write(record)
