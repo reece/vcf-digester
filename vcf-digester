@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+"""simple script to rewrite a VCF file with digest-based identifiers
+
+https://github.com/reece/vcf-digester
+"""
+
 
 import argparse
-import copy
 import hashlib
 import logging
 import random
@@ -17,11 +21,12 @@ _logger = logging.getLogger()
 def parse_args(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("VCF_IN")
-    ap.add_argument("VCF_OUT")
+    ap.add_argument("--out", "-o",
+                    default="-")
     ap.add_argument(
         "--random-fail-probability", "-r",
         type=int,
-        default=0.2)
+        default=0)
     opts = ap.parse_args(argv)
     return opts
 
@@ -36,7 +41,6 @@ def record_digests(record):
     payloads = [spdi_loc] + [f"{spdi_loc}:{a}" for a in [record.ref, *alts]]
     digests = [digest(p) for p in payloads]
     return digests
-    
 
 
 if __name__ == "__main__":
@@ -52,7 +56,7 @@ if __name__ == "__main__":
     vcf_in = VariantFile(filename=opts.VCF_IN)
     vcf_in.header.info.add("AD", "1", "String", "allele digests")
 
-    vcf_out = VariantFile(opts.VCF_OUT, "w", header=vcf_in.header)
+    vcf_out = VariantFile(opts.out, "w", header=vcf_in.header)
 
     for record in vcf_in:
         ld, *ads = record_digests(record)

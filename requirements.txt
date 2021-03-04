@@ -1,3 +1,2 @@
 coloredlogs
-pyvcf
 pysam
