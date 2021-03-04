@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+
+import argparse
+import copy
+import hashlib
+import logging
+import random
+import sys
+
+import coloredlogs
+from pysam import VariantFile
+
+
+_logger = logging.getLogger()
+
+
+def parse_args(argv):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("VCF_IN")
+    ap.add_argument("VCF_OUT")
+    ap.add_argument(
+        "--random-fail-probability", "-r",
+        type=int,
+        default=0.2)
+    opts = ap.parse_args(argv)
+    return opts
+
+
+def record_digests(record):
+    def digest(d):
+        return hashlib.sha512(d.encode("ascii")).hexdigest()[:8]
+
+    spdi_loc = f"{record.chrom}:{record.pos-1}:{len(record.ref)}"
+    alts = record.alts if record.alts else []
+    # payloads like ['20:14369:1', '20:14369:1:G', '20:14369:1:A']
+    payloads = [spdi_loc] + [f"{spdi_loc}:{a}" for a in [record.ref, *alts]]
+    digests = [digest(p) for p in payloads]
+    return digests
+    
+
+
+if __name__ == "__main__":
+    coloredlogs.install(level="INFO")
+
+    opts = parse_args(sys.argv[1:])
+
+    _logger.warning(f"I will randomly die with probabilty {opts.random_fail_probability}")
+
+    if random.random() < opts.random_fail_probability:
+        raise Exception("Dear silly human: I randomly died to spite you!")
+
+    vcf_in = VariantFile(filename=opts.VCF_IN)
+    vcf_in.header.info.add("AD", "1", "String", "allele digests")
+
+    vcf_out = VariantFile(opts.VCF_OUT, "w", header=vcf_in.header)
+
+    for record in vcf_in:
+        ld, *ads = record_digests(record)
+        record.id = ld
+        record.info["AD"] = ",".join(ads)
+        vcf_out.write(record)
