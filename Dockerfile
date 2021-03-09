@@ -12,4 +12,4 @@ RUN pip3 install -r requirements.txt
 
 COPY vcf-digester /
 
-ENTRYPOINT ["python3", "vcf-digester"]
+CMD ["python3", "vcf-digester"]
