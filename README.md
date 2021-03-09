@@ -4,9 +4,13 @@ rewrites VCF file with digest-based location ids and allele ids
 
 
 The goal is simply to experiment with building a docker image that can
-be run at DNANexus.  The script rewrites a single input VCF to replace
-the id field with a location digest, and to add a new ADIG info field
-contained allele digests for the ref and alts.
+be executed in PaaS environements.  (This particular script is written
+in Python and could probably be deployed as native tools on some
+platforms.)
+
+The script rewrites a single input VCF to replace the id field with a
+location digest, and to add a new ADIG info field contained allele
+digests for the ref and alts.
 
 
 ## Development

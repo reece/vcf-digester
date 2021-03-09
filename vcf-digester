@@ -6,6 +6,7 @@ https://github.com/reece/vcf-digester
 
 
 import argparse
+import gzip
 import hashlib
 import logging
 import random
@@ -26,7 +27,7 @@ def parse_args(argv):
     ap.add_argument("--out", "-o",
                     default="-")
     ap.add_argument(
-        "--random-fail-probability", "-r",
+        "--failure-probability", "-f",
         type=float,
         default=0)
     opts = ap.parse_args(argv)
@@ -50,9 +51,9 @@ if __name__ == "__main__":
 
     opts = parse_args(sys.argv[1:])
 
-    _logger.warning(f"I will randomly die with probabilty {opts.random_fail_probability}")
+    _logger.warning(f"I will randomly die with probabilty {opts.failure_probability}")
 
-    if random.random() < opts.random_fail_probability:
+    if random.random() < opts.failure_probability:
         raise Exception("Dear silly human: I randomly died to spite you!")
 
     vcf_in = VariantFile(filename=opts.VCF_IN)
